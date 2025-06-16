@@ -1,13 +1,13 @@
 flask
 flask-cors
-numpy
+numpy==1.24.4
 pillow
 opencv-python-headless
 pandas
 matplotlib
 pyyaml
 requests
-seaborn 
+seaborn
 
 torch==2.2.2+cpu
 torchvision==0.17.2+cpu
