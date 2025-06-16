@@ -7,7 +7,11 @@ app = Flask(__name__)
 CORS(app)
 
 # Path to the custom weights file
-model_path = r'E:\cardata\yolov5\runs\train\exp22\weights\best.pt'
+# Dynamically get the current directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Construct relative path to the model file
+model_path = os.path.join(BASE_DIR, 'best.pt')
 
 # Load the YOLOv5 model with custom weights
 model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
@@ -71,4 +75,5 @@ def predict():
     return jsonify({"predictions": predictions})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8080)
+
