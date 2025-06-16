@@ -1,18 +1,23 @@
 # Use official Python base image
+# Use official lightweight Python image
 FROM python:3.10-slim
 
-# Set working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy requirements.txt and install Python dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxext6 libxrender-dev gcc
 
-# Copy the rest of your app code
-COPY . .
+# Copy necessary files
+COPY app.py /app/app.py
+COPY best.pt /app/best.pt
+COPY requirements.txt /app/requirements.txt
 
-# Expose the port Flask will use (Cloud Run expects 8080)
-EXPOSE 8080
+# Install Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose the port Cloud Run expects
+ENV PORT=8080
 
 # Start the Flask app
 CMD ["python", "app.py"]
