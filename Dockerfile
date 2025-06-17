@@ -15,13 +15,14 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Copy necessary files
-COPY app.py /app/app.py
-COPY best.pt /app/best.pt
-COPY requirements.txt /app/requirements.txt
+# Clone YOLOv5 locally and install its dependencies
+RUN git clone --depth 1 https://github.com/ultralytics/yolov5.git /app/yolov5 \
+ && pip install --no-cache-dir -r /app/yolov5/requirements.txt
 
-# Install Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy application code and model
+COPY app.py best.pt requirements.txt /app/
+
+# Install remaining Python packages\RUN pip install --no-cache-dir -r requirements.txt
 
 # Set environment variable for Flask to use the correct port
 ENV PORT=8080
