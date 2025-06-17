@@ -3,20 +3,16 @@ from flask_cors import CORS
 import os
 import torch
 from PIL import Image
+from torchvision import transforms
 
 app = Flask(__name__)
 CORS(app)
 
-# Root route for Render health check and easy browser test
-@app.route('/', methods=['GET'])
-def index():
-    return jsonify({"status": "App is running successfully on Render!"})
-
-# Get current directory and model path
+# Model path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, 'best.pt')
 
-# Custom output labels
+# Labels for predictions
 custom_labels = {
     0: "Smart Diagnostics confirmed denting on the body panel, requiring repair work. Kindly share your vehicle details in the next step so I can generate an overall estimate for your concern.",
     1: "Smart Diagnostics confirmed cracks or chips on the front windscreen needing replacement. Kindly share your vehicle details in the next step so I can generate an overall estimate for your concern.",
@@ -37,13 +33,22 @@ custom_labels = {
     16: "Smart Diagnostics confirmed denting on the roof panel requiring restoration work. Kindly allow me to analyze the severity so we can generate an overall estimate for your concern."
 }
 
-# Global model cache (loads only once)
-model = None
+# Load model once and cache
+model = torch.load(model_path, map_location=torch.device('cpu'))
+model.eval()
+
+# Optional: define image transform if needed
+transform = transforms.Compose([
+    transforms.Resize((480, 480)),
+    transforms.ToTensor(),
+])
+
+@app.route('/')
+def home():
+    return 'Smart Diagnostics is live 🚗🧠'
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    global model
-
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
@@ -53,12 +58,10 @@ def predict():
     except Exception as e:
         return jsonify({"error": "Invalid image file", "exception": str(e)}), 400
 
-    # Load model only once
-    if model is None:
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, force_reload=False)
-        model.conf = 0.30
-
-    results = model(image, size=480)
+    try:
+        results = model(image, size=480)
+    except Exception as e:
+        return jsonify({"error": "Model inference failed", "exception": str(e)}), 500
 
     predictions = []
     try:
@@ -78,14 +81,14 @@ def predict():
 
     if not predictions:
         predictions = [{
-            "custom": "Please upload slightly closer version of the issue. If problem persists, kindly consider the Regular Service (prime care) option.",
+            "custom": "Please upload a closer version of the issue. If the problem persists, kindly consider the Regular Service (prime care) option.",
             "original": "Unable to detect an issue",
             "confidence": 0.0
         }]
 
     return jsonify({"predictions": predictions})
 
-# Required for Render and cloud platforms
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
