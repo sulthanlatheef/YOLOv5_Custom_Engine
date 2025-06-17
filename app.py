@@ -7,6 +7,11 @@ from PIL import Image
 app = Flask(__name__)
 CORS(app)
 
+# Root route for Render health check and easy browser test
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({"status": "App is running successfully on Render!"})
+
 # Get current directory and model path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, 'best.pt')
@@ -80,7 +85,7 @@ def predict():
 
     return jsonify({"predictions": predictions})
 
-# Required for Cloud Run
+# Required for Render and cloud platforms
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
