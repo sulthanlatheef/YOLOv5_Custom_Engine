@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgl1-mesa-glx \
-    gcc
+    gcc \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 # Copy necessary files
 COPY app.py /app/app.py
@@ -21,8 +23,11 @@ COPY requirements.txt /app/requirements.txt
 # Install Python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port Cloud Run expects
+# Set environment variable for Flask to use the correct port
 ENV PORT=8080
+
+# Expose the port Flask will run on
+EXPOSE 8080
 
 # Start the Flask app
 CMD ["python", "app.py"]
