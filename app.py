@@ -1,18 +1,22 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import torch
 from PIL import Image
-from torchvision import transforms
+from ultralytics import YOLO
 
 app = Flask(__name__)
 CORS(app)
 
-# Model path
+# Root route for Render health check
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({"status": "App is running successfully on Render!"})
+
+# Get current directory and model path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, 'best.pt')
 
-# Labels for predictions
+# Custom output labels
 custom_labels = {
     0: "Smart Diagnostics confirmed denting on the body panel, requiring repair work. Kindly share your vehicle details in the next step so I can generate an overall estimate for your concern.",
     1: "Smart Diagnostics confirmed cracks or chips on the front windscreen needing replacement. Kindly share your vehicle details in the next step so I can generate an overall estimate for your concern.",
@@ -33,61 +37,42 @@ custom_labels = {
     16: "Smart Diagnostics confirmed denting on the roof panel requiring restoration work. Kindly allow me to analyze the severity so we can generate an overall estimate for your concern."
 }
 
-# Load model once and cache
-model = torch.load(model_path, map_location=torch.device('cpu'))
-model.eval()
-
-# Optional: define image transform if needed
-transform = transforms.Compose([
-    transforms.Resize((480, 480)),
-    transforms.ToTensor(),
-])
-
-@app.route('/')
-def home():
-    return 'Smart Diagnostics is live 🚗🧠'
+# Load model once at startup
+model = YOLO(model_path)
+model.conf = 0.30  # set confidence threshold
 
 @app.route('/predict', methods=['POST'])
 def predict():
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
-    file = request.files['image']
     try:
-        image = Image.open(file.stream).convert('RGB')
+        img = Image.open(request.files['image'].stream).convert('RGB')
     except Exception as e:
         return jsonify({"error": "Invalid image file", "exception": str(e)}), 400
 
-    try:
-        results = model(image, size=480)
-    except Exception as e:
-        return jsonify({"error": "Model inference failed", "exception": str(e)}), 500
+    # Run inference
+    results = model(img, imgsz=480)  # returns a list with one Results object
+    boxes = results[0].boxes  # Boxes object
 
     predictions = []
-    try:
-        detections = results.xyxyn[0]
-        for detection in detections:
-            cls_index = int(detection[5])
-            confidence_score = float(detection[4])
-            custom = custom_labels.get(cls_index, "Unknown Custom Output")
-            original = model.names[cls_index] if cls_index in model.names else "Unknown"
-            predictions.append({
-                "custom": custom,
-                "original": original,
-                "confidence": confidence_score
-            })
-    except Exception as e:
-        return jsonify({"error": "Failed to extract predictions", "exception": str(e)}), 500
+    for box in boxes:
+        cls = int(box.cls[0])   # class index
+        conf = float(box.conf[0])
+        predictions.append({
+            "custom": custom_labels.get(cls, "Unknown Custom Output"),
+            "original": model.names.get(cls, "Unknown"),
+            "confidence": conf
+        })
 
     if not predictions:
         predictions = [{
-            "custom": "Please upload a closer version of the issue. If the problem persists, kindly consider the Regular Service (prime care) option.",
+            "custom": "Please upload slightly closer version of the issue. If problem persists, kindly consider the Regular Service (prime care) option.",
             "original": "Unable to detect an issue",
             "confidence": 0.0
         }]
 
     return jsonify({"predictions": predictions})
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
