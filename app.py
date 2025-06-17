@@ -1,20 +1,21 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
+import torch
 from PIL import Image
-from ultralytics import YOLO
 
 app = Flask(__name__)
 CORS(app)
 
-# Root route for Render health check
+# Health‑check root
 @app.route('/', methods=['GET'])
 def index():
     return jsonify({"status": "App is running successfully on Render!"})
 
-# Get current directory and model path
+# Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, 'best.pt')
+MODEL_PATH = os.path.join(BASE_DIR, 'best.pt')
+YOLOV5_DIR = os.path.join(BASE_DIR, 'yolov5')
 
 # Custom output labels
 custom_labels = {
@@ -37,8 +38,14 @@ custom_labels = {
     16: "Smart Diagnostics confirmed denting on the roof panel requiring restoration work. Kindly allow me to analyze the severity so we can generate an overall estimate for your concern."
 }
 
-# Load model once at startup
-model = YOLO(model_path)
+# Load the YOLOv5 model from the local clone (only once)
+model = torch.hub.load(
+    repo_or_dir=YOLOV5_DIR,
+    model='custom',
+    path=MODEL_PATH,
+    source='local',
+    force_reload=False
+)
 model.conf = 0.30  # set confidence threshold
 
 @app.route('/predict', methods=['POST'])
@@ -52,22 +59,22 @@ def predict():
         return jsonify({"error": "Invalid image file", "exception": str(e)}), 400
 
     # Run inference
-    results = model(img, imgsz=480)  # returns a list with one Results object
-    boxes = results[0].boxes  # Boxes object
+    results = model(img, size=480)
+    detections = results.xyxyn[0]  # tensor with [x1,y1,x2,y2,conf,cls] rows
 
     predictions = []
-    for box in boxes:
-        cls = int(box.cls[0])   # class index
-        conf = float(box.conf[0])
+    for det in detections:
+        cls_idx = int(det[5].item())
+        conf    = float(det[4].item())
         predictions.append({
-            "custom": custom_labels.get(cls, "Unknown Custom Output"),
-            "original": model.names.get(cls, "Unknown"),
+            "custom":   custom_labels.get(cls_idx, "Unknown Custom Output"),
+            "original": model.names.get(cls_idx, "Unknown"),
             "confidence": conf
         })
 
     if not predictions:
         predictions = [{
-            "custom": "Please upload slightly closer version of the issue. If problem persists, kindly consider the Regular Service (prime care) option.",
+            "custom":   "Please upload slightly closer version of the issue. If problem persists, kindly consider the Regular Service (prime care) option.",
             "original": "Unable to detect an issue",
             "confidence": 0.0
         }]
