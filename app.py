@@ -48,6 +48,10 @@ model = torch.hub.load(
 )
 model.conf = 0.30  # set confidence threshold
 
+@app.route('/ping')
+def ping():
+    return "pong", 200
+
 @app.route('/predict', methods=['POST'])
 def predict():
     if 'image' not in request.files:
