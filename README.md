@@ -31,7 +31,10 @@ A YOLOv5-based AI engine designed to automatically detect external vehicle damag
  
 3.Ensure best.pt (trained YOLOv5 model) is in the root directory.
 
-
+4. Run the Flask API:
+   ```bash
+   python app.py
+ 5.The engine is now ready to receive vehicle images via API for damage detection.  
 
 
 
