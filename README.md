@@ -27,7 +27,10 @@ A YOLOv5-based AI engine designed to automatically detect external vehicle damag
    ```bash
    git clone https://github.com/yourusername/advanced-ai-diagnostics.gitxt
 2.Install required Python packages:
-pip install -r requirements.txt
+ pip install -r requirements.txt
+3.Ensure best.pt (trained YOLOv5 model) is in the root directory.
+
+
 
 
 
