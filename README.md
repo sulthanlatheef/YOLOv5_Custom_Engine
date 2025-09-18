@@ -24,11 +24,14 @@ A YOLOv5-based AI engine designed to automatically detect external vehicle damag
 ## Installation & Setup
 
 1. Clone the repository:
-  bash: git clone https://github.com/sulthanlatheef/YOLO_Host_Engine
-2. Install required Python packages:
-   pip install -r requirements.txt
-3.Ensure best.pt (trained YOLOv5 model) is in the root directory.
-4.Run the Flask API:
-  bash: pythom app.py
-5.The engine is now ready to receive vehicle images via API for damage detection.
+   ```bash
+   git clone https://github.com/yourusername/advanced-ai-diagnostics.gitxt
+2.Install required Python packages:
+pip install -r requirements.txt
+
+
+
+
+
+
    
