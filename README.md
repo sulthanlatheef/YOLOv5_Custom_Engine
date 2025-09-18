@@ -16,7 +16,7 @@ A YOLOv5-based AI engine designed to automatically detect external vehicle damag
 ## Tech Stack
 
 - **AI/ML Framework**: PyTorch, YOLOv5
-- **Programming Language**: Python 3.x
+- **Programming Language**: Python 3.15
 - **Computer Vision**: OpenCV
 - **Web Integration**: Flask API (for connecting with web applications)
 - **Dataset**: Custom-labeled vehicle damage images
