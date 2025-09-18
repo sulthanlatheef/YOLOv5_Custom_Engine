@@ -1,4 +1,4 @@
-# Advanced AI Diagnostics Engine for Vehicle Damage Detection
+# Advanced AI-Diagnostics Engine For Vehicle Damage Analysis
 
 A YOLOv5-based AI engine designed to automatically detect external vehicle damages from images. This engine can identify multiple types of car damages, provide confidence scores for severity, and can be integrated into web or desktop applications for automated service estimates.
 
